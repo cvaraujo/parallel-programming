@@ -1,0 +1,29 @@
+# File extensions to be ignored anywhere in the tree
+*~
+*.o
+_kernel*
+
+# Explicit files to ignore
+Makefile_v1
+Makefile_v2
+myUnibench
+
+#Directories to ignore
+build/*
+
+# Merge files created by git.
+*.orig
+# Byte compiled python modules.
+*.pyc
+# vim swap files
+.*.sw?
+.sw?
+#OS X specific files.
+.DS_store
+# IDE config files
+*.user
+*.sublime-project
+*.sublime-workspace
+.cproject
+.project
+.settings

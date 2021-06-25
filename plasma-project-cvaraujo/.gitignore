@@ -1,0 +1,6 @@
+Makefile.coreblas.gen
+Makefile.plasma.gen
+Makefile.test.gen
+build
+spack-build
+tools/subs.pyc

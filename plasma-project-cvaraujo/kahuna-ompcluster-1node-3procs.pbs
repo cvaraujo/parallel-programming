@@ -1,0 +1,52 @@
+#PBS -q route
+#PBS -N MO644-Plasma
+#PBS -o plasma-job.out
+#PBS -e plasma-job.err
+#PBS -V
+#PBS -l walltime=00:10:00
+#PBS -l select=1:ncpus=40:ngpus=0:Qlist=Allnodes
+#!/bin/sh
+
+# The header above specifies the resources that the job can use.
+# The last line of the header works as follow:
+# select=<number of nodes>:ncpus=<cores per node>:
+# ngpus=<gpu per nodes>:Qlist=<computer list>
+
+# Change current folder to job directory
+cd $PBS_O_WORKDIR
+
+# Create build folder
+mkdir build_$PBS_JOBID
+
+# Singularity image path
+SIF_IMG=/scratch/carlacc/ompcluster/plasma-dev_ubuntu18.04-cuda10.1-mpich-legacy.sif
+
+# Load required modules and environment configuration
+. $HOME/.bashrc
+source /etc/profile.d/modules.sh
+module purge
+module load mpich/mpich2-1.4.1
+module load singularity/singularity-3.0.3
+
+export CC=clang
+export CXX=clang++
+
+# Disable Debugging message (set it to 1 if you want to see them)
+export LIBOMPTARGET_DEBUG=0
+
+# Compile PLASMA
+cd build_$PBS_JOBID
+singularity exec $SIF_IMG cmake ..
+singularity exec $SIF_IMG make -j24
+
+# Execute PLASMA within OmpCluster container using Singularity
+mpirun -np 3 singularity exec $SIF_IMG ./plasmatest
+
+# TODO: For now, this command only lists the kernels available in PLASMA.
+# You need to configure the kernel that was attributed to you.
+# For example, running the following command would execute the dgeadd kernel
+# singularity exec $SIF_IMG ./plasmatest dgeadd
+
+# Remove build folder and hostfile
+cd ..
+rm build_$PBS_JOBID -rf

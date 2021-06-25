@@ -1,0 +1,57 @@
+#PBS -q route
+#PBS -N MO644-job 
+#PBS -o gpu-job.out
+#PBS -e gpu-job.err
+#PBS -V
+#PBS -l walltime=00:25:00
+#PBS -l select=1:ncpus=1:ngpus=1:Qlist=GPUK20:mem=200mb
+#!/bin/sh
+
+# cd to job directory
+cd $PBS_O_WORKDIR
+
+# program loading and env configuration
+. $HOME/.bashrc
+source /etc/profile.d/modules.sh
+module purge
+module load compiler/gcc-5.3
+module load cuda/cuda-10.1
+module load cmake/cmake-3.15
+
+
+cmake -E remove -f build
+cmake -E make_directory build
+cd build
+cmake ../ -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_COMPILER=/softwares/cuda-10.1/bin/nvcc
+cd ..
+
+###
+### @swineone's script
+###
+cd build
+make
+cd ..
+for a in 1 2 3 4 5
+do
+        build/parallel tests/$a.in \
+              1>parallel.$a.out \
+              2>parallel.$a.time
+        cat parallel.$a.out
+
+        build/serial tests/$a.in \
+              1>serial.$a.out \
+              2>serial.$a.time
+        cat serial.$a.out
+
+        diff -u tests/$a.out parallel.$a.out >> errors.out
+
+        ser=$(<serial.$a.time)
+        par=$(<parallel.$a.time)
+        speedup=$(bc -l <<< "scale=4; $ser/$par")
+        echo "  Serial runtime: ${ser}s"
+        echo "Parallel runtime: ${par}s"
+        echo "         Speedup: ${speedup}x"
+        if [[ ! -f runtime.csv ]]; then
+                echo "# Input,Serial time,Parallel time,Speedup" > runtime.csv
+        fi
+done

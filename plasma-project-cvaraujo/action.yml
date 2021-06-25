@@ -1,0 +1,5 @@
+name: 'Build and test Plasma'
+description: 'This action builds Plasma and tests a kernel.'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
